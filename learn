@@ -1,0 +1,1443 @@
+/* Create Database and Schema*/
+
+CREATE DATABASE LA_DB;
+
+CREATE SCHEMA LA_SCHEMA;
+
+/* Create table and insert record*/
+
+CREATE OR REPLACE TABLE my_table (
+  id INTEGER primary key,
+  name VARCHAR(50) NOT NULL,
+  email VARCHAR(100) 
+);
+
+
+INSERT INTO my_table (id, name, email) VALUES
+  (1, 'John Smith', 'john@example.com'),
+  (1,'Amit', 'amit@example.com'),
+  (3, 'Bob Johnson', 'bob@example.com');
+
+/* Dispay data in the table */
+
+SELECT * FROM my_table;
+
+/* Check Meta-data of the table */
+
+DESCRIBE TABLE MY_TABLE;
+
+/* Check Meta-data of all the databases */
+
+SHOW databases;
+
+/* Check Meta-data of your database */
+
+DESCRIBE database LA_DB;
+
+
+
+/* CREATE DATABASE AND SCHEMA*/
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+-- CREATE A PERMANENT TABLE
+CREATE TABLE PERMANENT_TABLE (
+  ID NUMBER,
+  NAME VARCHAR,
+  DATE DATE
+);
+
+-- CREATE A TRANSIENT TABLE
+CREATE TRANSIENT TABLE TRANSIENT_TABLE (
+  ID NUMBER,
+  NAME VARCHAR,
+  DATE DATE
+);
+
+-- CREATE A TEMPORARY TABLE and also use abbreviation TEMP intead of TEMPORARY
+-- Also Creating Temporary table doesnt require  does not require the CREATE TABLE privilege on the schema in which the object is created.
+CREATE TEMPORARY TABLE TEMPORARY_TABLE (
+  ID NUMBER,
+  NAME VARCHAR,
+  DATE DATE
+);
+
+-- ADD DATA TO THE TABLES
+INSERT INTO PERMANENT_TABLE VALUES (1, 'John', '2022-01-01');
+INSERT INTO TRANSIENT_TABLE VALUES (2, 'Jane', '2022-01-02');
+INSERT INTO TEMPORARY_TABLE VALUES (4, 'Jill', '2022-01-04');
+
+-- Display TABLES METADATA
+
+SHOW TABLES;
+
+-- VIEW THE DATA IN THE TABLES
+SELECT * FROM PERMANENT_TABLE;
+SELECT * FROM TRANSIENT_TABLE;
+SELECT * FROM TEMPORARY_TABLE;
+
+-- CREATE CLONE FROM TABLES
+
+CREATE TEMPORARY TABLE TEMPORARY_TABLE2 CLONE PERMANENT_TABLE;
+
+SELECT * FROM TEMPORARY_TABLE2;
+
+CREATE TRANSIENT TABLE TRANSIENT_TABLE2 CLONE PERMANENT_TABLE;
+
+SELECT * FROM TRANSIENT_TABLE2;
+
+CREATE TEMPORARY TABLE TEMPORARY_TABLE3 CLONE TRANSIENT_TABLE;
+
+-- ALTER RETENTION TIME
+
+ALTER TABLE PERMANENT_TABLE SET DATA_RETENTION_TIME_IN_DAYS = 31;
+ALTER TABLE TEMPORARY_TABLE2 SET DATA_RETENTION_TIME_IN_DAYS = 2;
+ALTER TABLE TRANSIENT_TABLE SET DATA_RETENTION_TIME_IN_DAYS = 2;
+
+-- Display TABLES METADATA
+
+SHOW TABLES;
+
+
+
+
+
+CREATE WAREHOUSE IF NOT EXISTS xs_warehouse
+  WAREHOUSE_SIZE = XSMALL 
+  AUTO_SUSPEND = 60
+  AUTO_RESUME = TRUE
+INITIALLY_SUSPENDED=TRUE;
+
+
+show warehouses
+
+
+objectProperties ::=
+  WAREHOUSE_TYPE = STANDARD | SNOWPARK-OPTIMIZED
+  WAREHOUSE_SIZE = XSMALL | SMALL | MEDIUM | LARGE | XLARGE | XXLARGE | XXXLARGE | X4LARGE | X5LARGE | X6LARGE
+  MAX_CLUSTER_COUNT = <num>
+  MIN_CLUSTER_COUNT = <num>
+  SCALING_POLICY = STANDARD | ECONOMY
+  AUTO_SUSPEND = <num> | NULL
+  AUTO_RESUME = TRUE | FALSE
+  INITIALLY_SUSPENDED = TRUE | FALSE
+  RESOURCE_MONITOR = <monitor_name>
+  COMMENT = '<string_literal>'
+  ENABLE_QUERY_ACCELERATION = TRUE | FALSE
+  QUERY_ACCELERATION_MAX_SCALE_FACTOR = <num> 0--100
+
+  objectParams ::=
+  MAX_CONCURRENCY_LEVEL = <num>
+  STATEMENT_QUEUED_TIMEOUT_IN_SECONDS = <num>
+  STATEMENT_TIMEOUT_IN_SECONDS = <num>
+  [ [ WITH ] TAG ( <tag_name> = '<tag_value>' [ , <tag_name> = '<tag_value>' , ... ] ) ]
+
+
+DROP WAREHOUSE  IF EXISTS  xs_warehouse;
+
+USE WAREHOUSE compute_wh;
+
+
+SHOW WAREHOUSES LIKE '%com%'
+
+
+
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+USE ROLE ACCOUNTADMIN;
+USE WAREHOUSE COMPUTE_WH;
+
+create or replace TABLE LA_DB.LA_SCHEMA.CUSTOMERS_USER (
+	CUSTOMER NUMBER(38,0) NOT NULL,
+	FIRST_NAME VARCHAR(255) NOT NULL,
+	LAST_NAME VARCHAR(255) NOT NULL,
+	REGION VARCHAR(255) NOT NULL,
+	EMAIL VARCHAR(255) NOT NULL,
+	GENDER VARCHAR(255) NOT NULL,
+	"order" NUMBER(38,0) NOT NULL
+);
+
+
+
+list @~/CUSTOMERS_USER;
+
+-- Recommended to USE 100-250 MB of compressed file
+--C:\Users\99909537\Downloads\BH\snowflakeData\
+put file://C:\Users\99909537\Downloads\BH\snowflakeData\MOCK.CSV @~/customers_user/staged AUTO_COMPRESS = FALSE;
+put file://C:\Users\99909537\Downloads\BH\snowflakeData\MOCK1.CSV @~/customers_user/staged AUTO_COMPRESS = FALSE;
+
+put file://C:\data\MOCK1.CSV @~/customers_user/staged AUTO_COMPRESS = FALSE OVERWRITE = TRUE;
+
+
+COPY INTO customers_user
+FROM @~/customers_user/staged
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1)  PURGE = TRUE;
+
+
+select * from CUSTOMERS_USER;
+
+
+
+
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+USE ROLE ACCOUNTADMIN;
+USE WAREHOUSE COMPUTE_WH;
+
+create or replace TABLE LA_DB.LA_SCHEMA.CUSTOMERS_TABLE (
+	CUSTOMER NUMBER(38,0) NOT NULL,
+	FIRST_NAME VARCHAR(255) NOT NULL,
+	LAST_NAME VARCHAR(255) NOT NULL,
+	REGION VARCHAR(255) NOT NULL,
+	EMAIL VARCHAR(255) NOT NULL,
+	GENDER VARCHAR(255) NOT NULL,
+	"order" NUMBER(38,0) NOT NULL
+);
+
+
+-- List down the stage
+list @%CUSTOMERS_TABLE;
+
+
+-- load file via snowsql
+put file://C:\Users\99909537\Downloads\BH\snowflakeData\MOCK.CSV @%customers_table/staged AUTO_COMPRESS = FALSE;
+put file://C:\Users\99909537\Downloads\BH\snowflakeData\MOCK1.CSV @%customers_table/staged AUTO_COMPRESS = FALSE;
+put file://C:\Users\99909537\Downloads\BH\snowflakeData\MOCK1.CSV @%customers_table/staged AUTO_COMPRESS = FALSE OVERWRITE = TRUE;
+
+-- Copy file from stage to table
+COPY INTO customers_table
+FROM @%customers_table/staged
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1)  PURGE = TRUE;
+
+
+select customer, count(*) from customers_table
+group by customer
+having count(*)>1;
+
+
+
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+USE ROLE ACCOUNTADMIN;
+USE WAREHOUSE COMPUTE_WH;
+
+create or replace TABLE LA_DB.LA_SCHEMA.CUSTOMERS_NAMED (
+	CUSTOMER NUMBER(38,0) NOT NULL,
+	FIRST_NAME VARCHAR(255) NOT NULL,
+	LAST_NAME VARCHAR(255) NOT NULL,
+	REGION VARCHAR(255) NOT NULL,
+	EMAIL VARCHAR(255) NOT NULL,
+	GENDER VARCHAR(255) NOT NULL,
+	"order" NUMBER(38,0) NOT NULL
+);
+
+
+
+show stages;
+
+
+
+CREATE OR REPLACE STAGE internal_named_stage file_format = (
+    type = 'CSV' FIELD_DELIMITER = ',' SKIP_HEADER = 1
+);
+
+-- All Command listed here (Except PUT command)  can be executed in snowsight as well
+
+put file://C:\Users\99909537\Downloads\BH\snowflakeData\MOCK.CSV @internal_named_stage1 AUTO_COMPRESS = FALSE;
+put file://C:\Users\99909537\Downloads\BH\snowflakeData\MOCK1.CSV @internal_named_stage1 AUTO_COMPRESS = FALSE OVERWRITE = TRUE;
+
+
+
+LIST @internal_named_stage1;
+
+
+COPY INTO customers_named
+FROM @internal_named_stage1
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1)  PURGE = TRUE;
+
+
+select * from LA_DB.LA_SCHEMA.CUSTOMERS_NAMED where customer=1;
+
+--------------------------DATA LOADING-------------------------------------------------------
+-- Use relavant DB, Schema, Role and Warehouse
+
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+USE ROLE ACCOUNTADMIN;
+USE WAREHOUSE COMPUTE_WH;
+
+-- Create a new table
+
+CREATE or replace TABLE customers_dl (
+  customer INT NOT NULL,
+  first_name VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) NOT NULL,
+  region VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  gender VARCHAR(255) NOT NULL,
+  "order" INT NOT NULL
+);
+
+
+CREATE OR REPLACE STAGE CUST_STAGE ;
+-- Force load, shall reload the data forcefully
+
+list @CUST_STAGE;
+
+
+put file://C:\Users\99909537\Downloads\BH\snowflakeData\MOCK.CSV @CUST_STAGE AUTO_COMPRESS = FALSE;
+
+LIST @internal_named_stage1;
+
+
+COPY INTO CUSTOMERS_dl
+FROM @internal_named_stage1
+--FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1)  PURGE = TRUE
+FILE_FORMAT = (
+    TYPE=CSV,
+    SKIP_HEADER=1,
+    FIELD_DELIMITER=',',
+    TRIM_SPACE=FALSE,
+    FIELD_OPTIONALLY_ENCLOSED_BY=NONE,
+    DATE_FORMAT=AUTO,
+    TIME_FORMAT=AUTO,
+    TIMESTAMP_FORMAT=AUTO
+)
+ON_ERROR=ABORT_STATEMENT
+LOAD_UNCERTAIN_FILES = TRUE 
+PURGE = TRUE
+FORCE = TRUE;
+
+
+select * from customers_dl;
+
+
+----------------- Data Unloading --------------------------------------
+
+--Remove stage files
+
+remove @internal_named_stage1;
+
+
+select count(*) from customers_named;
+
+--Copy data from table to internal stage
+
+COPY INTO @internal_named_stage from customers_named FILE_FORMAT = (type = 'CSV' COMPRESSION='NONE') 
+--MAX_FILE_SIZE = 60
+OVERWRITE = TRUE
+HEADER= TRUE;
+
+
+
+
+--List files in internal stage
+list @internal_named_stage;
+
+
+
+--Download the file to desktop (Only works in SnowSQL)
+
+GET @internal_named_stage file://C:\data\unload;
+
+--Remove stage files
+remove @internal_named_stage;
+
+
+COPY INTO @internal_named_stage1 from customers_named
+PARTITION BY region 
+FILE_FORMAT = (type = 'CSV' COMPRESSION='NONE') ;
+
+--List files in internal stage
+list @internal_named_stage1;
+list @internal_named_stage;
+
+----
+
+COPY INTO @internal_named_stage from customers_named FILE_FORMAT = (type = 'CSV' COMPRESSION='NONE') 
+OVERWRITE = TRUE
+HEADER= TRUE
+SINGLE=true
+MAX_FILE_SIZE=4900000000;
+
+
+
+GET @internal_named_stage file://C:\Users\99909537\Downloads\BH\data\unload;
+
+
+/* CREATE DATABASE AND SCHEMA*/
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+/* Use acccountadmin role and WH */
+
+USE ROLE ACCOUNTADMIN;
+
+USE WAREHOUSE COMPUTE_WH;
+
+
+-- Create a table
+CREATE OR REPLACE TABLE LA_TABLE (
+  id INT,
+  name STRING,
+  age INT
+);
+
+-- Add entries to the table
+INSERT INTO LA_TABLE (id, name, age) VALUES (1, 'John Doe', 30);
+INSERT INTO LA_TABLE (id, name, age) VALUES (2, 'Jane Doe', 25);
+
+
+-- Create a secure view
+CREATE OR REPLACE SECURE VIEW my_secure_view AS
+SELECT id, name
+FROM LA_TABLE
+WHERE age >= 26;
+
+-- Use ACCOUNTADMIN Role for CREATE SHARE
+
+USE ROLE ACCOUNTADMIN;
+
+
+CREATE OR REPLACE SHARE my_share;
+
+--Can give GRANT with SECURITYADMIN as well
+
+USE ROLE SECURITYADMIN;
+
+-- USAGE on DB and SCHEMA Needed in order to access TABLE
+
+
+GRANT USAGE ON DATABASE LA_DB TO SHARE my_share;
+GRANT USAGE ON SCHEMA LA_DB.LA_SCHEMA TO SHARE my_share;
+
+GRANT SELECT ON VIEW LA_DB.LA_SCHEMA.MY_SECURE_VIEW TO SHARE my_share;  
+
+REVOKE ALL PRIVILEGES ON VIEW LA_DB.LA_SCHEMA.MY_SECURE_VIEW FROM SHARE my_share;
+
+
+USE ROLE ACCOUNTADMIN;
+
+-- Create a reader account
+CREATE MANAGED ACCOUNT reader_acc
+ADMIN_NAME = reader_admin
+ADMIN_PASSWORD = 'Snow@12345'
+TYPE = READER;
+
+{"accountName":"CD82713","loginUrl":"https://cd82713.ap-southeast-1.snowflakecomputing.com"}
+
+
+ALTER SHARE my_share
+ADD ACCOUNT =  CD82713              -- Add new account
+SHARE_RESTRICTIONS = FALSE;
+
+
+
+SHOW MANAGED ACCOUNTS;
+
+--Readers Account Code
+
+SHOW SHARES;
+
+CREATE DATABASE LA_DB2 FROM SHARE PMVXJTN.DX34919.MY_SHARE;
+
+CREATE WAREHOUSE IF NOT EXISTS xs_warehouse
+  WAREHOUSE_SIZE = XSMALL 
+  AUTO_SUSPEND = 60
+  AUTO_RESUME = TRUE
+INITIALLY_SUSPENDED=TRUE;
+
+SELECT * FROM LA_DB2.LA_SCHEMA.MY_SECURE_VIEW;
+
+
+-----------------------------------------------------------------------
+
+
+/* 
+
+    Copy INTO TABLE Options 
+
+     ON_ERROR = { CONTINUE | SKIP_FILE (DEFAULT IN SNOWPIPE) | SKIP_FILE_<num> | 'SKIP_FILE_<num>%' | ABORT_STATEMENT (DEFAULT IN BULK LOADING) }
+     SIZE_LIMIT = <num>
+     RETURN_FAILED_ONLY = TRUE | FALSE (DEFAULT)
+     MATCH_BY_COLUMN_NAME = CASE_SENSITIVE | CASE_INSENSITIVE | NONE (DEFAULT)  ---
+     ENFORCE_LENGTH = TRUE (DEFAULT) | FALSE
+     
+     TRUNCATECOLUMNS = TRUE | FALSE
+     FORCE = TRUE | FALSE
+     PURGE = TRUE | FALSE
+
+*/
+
+
+/* CREATE DATABASE AND SCHEMA*/
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+/* Use acccountadmin role and WH */
+
+USE ROLE ACCOUNTADMIN;
+
+USE WAREHOUSE COMPUTE_WH;
+
+RM @internal_named_stage/MOCK1.CSV;
+
+LS @internal_named_stage;
+
+-- CSV File Format
+
+CREATE OR REPLACE FILE FORMAT my_csv_ff
+  TYPE = CSV
+  FIELD_DELIMITER = ','
+  SKIP_HEADER = 1
+  NULL_IF = ('NULL', 'null')
+  EMPTY_FIELD_AS_NULL = true
+  COMPRESSION = NONE;
+
+  -- Create a sample table
+  
+CREATE OR REPLACE TABLE LA_DB.LA_SCHEMA.CUSTOMERS_NAMED (
+	CUSTOMER NUMBER(38,0) NOT NULL,
+	FIRST_NAME VARCHAR(255) NOT NULL,
+	LAST_NAME VARCHAR(255) NOT NULL,
+	REGION VARCHAR(255) NOT NULL,
+	EMAIL VARCHAR(255) NOT NULL,
+	GENDER VARCHAR(255) NOT NULL,
+	"order" NUMBER(38,0) NOT NULL
+);
+
+--ON_ERROR = { CONTINUE | SKIP_FILE (DEFAULT IN SNOWPIPE) | SKIP_FILE_<num> | 'SKIP_FILE_<num>%' | ABORT_STATEMENT (DEFAULT IN BULK LOADING) }
+-- Use defaut Copy
+
+
+ls @internal_named_stage
+
+
+COPY INTO customers_named
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff;
+
+SELECT COUNT(*) FROM customers_named;
+TRUNCATE customers_named;
+
+-- ABORT STATEMENT IS BY DEFAULT
+
+COPY INTO customers_named
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff
+ON_ERROR = ABORT_STATEMENT;
+
+SELECT COUNT(*) FROM customers_named;
+TRUNCATE customers_named;
+
+-- Use of CONTINUE to ignore error records
+
+COPY INTO customers_named
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff
+ON_ERROR = CONTINUE;
+
+SELECT COUNT(*) FROM customers_named;
+TRUNCATE customers_named;
+
+
+-- SKIP the file if erroneous record
+
+COPY INTO customers_named
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff
+ON_ERROR = SKIP_FILE;
+
+SELECT COUNT(*) FROM customers_named;
+TRUNCATE customers_named;
+
+-- Ignore first 2 error
+
+COPY INTO customers_named
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff
+ON_ERROR = SKIP_FILE_2;
+
+SELECT COUNT(*) FROM customers_named;
+TRUNCATE table customers_named;
+
+-- Ignore first 2% error
+
+COPY INTO customers_named
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff
+ON_ERROR = 'SKIP_FILE_2%';
+
+
+SELECT COUNT(*) FROM customers_named;
+TRUNCATE customers_named;
+
+-- Size Limit Option, First file will always go through
+
+COPY INTO customers_named
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff
+SIZE_LIMIT = 640;
+
+TRUNCATE customers_named;
+
+-- RETURN_FAILED_ONLY = TRUE | FALSE (DEFAULT)
+-- Return Failed file
+
+COPY INTO customers_named
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff
+ON_ERROR = CONTINUE
+RETURN_FAILED_ONLY  = TRUE;
+
+TRUNCATE customers_named;
+
+--MATCH_BY_COLUMN_NAME = CASE_SENSITIVE | CASE_INSENSITIVE | NONE (DEFAULT)
+-- Case sensitive options checks Columns
+
+COPY INTO customers_named
+FROM @internal_named_stage/MOCK.CSV
+FILE_FORMAT = my_csv_ff2
+MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE;
+
+select * from customers_named;
+
+TRUNCATE customers_named;
+
+CREATE OR REPLACE FILE FORMAT my_csv_ff2
+  TYPE = CSV
+  FIELD_DELIMITER = ','
+  --SKIP_HEADER = 1
+  NULL_IF = ('NULL', 'null')
+  EMPTY_FIELD_AS_NULL = true
+  PARSE_HEADER = TRUE
+  COMPRESSION = NONE;
+
+TRUNCATE customers_named;
+
+  CREATE OR REPLACE TABLE LA_DB.LA_SCHEMA.CUSTOMERS_NAMED2 (
+	CUSTOMER NUMBER(38,0) NOT NULL,
+	FIRST_NAME VARCHAR(5) NOT NULL,
+	LAST_NAME VARCHAR(255) NOT NULL,
+	REGION VARCHAR(255) NOT NULL,
+	EMAIL VARCHAR(255) NOT NULL,
+	GENDER VARCHAR(255) NOT NULL,
+	"order" NUMBER(38,0) NOT NULL
+);
+
+-- ENFORCE_LENGTH = TRUE (DEFAULT) | FALSE
+-- Reverse of TRUNCATECOLUMN
+
+COPY INTO customers_named2
+FROM @internal_named_stage/MOCK.CSV
+FILE_FORMAT = my_csv_ff
+ENFORCE_LENGTH =  FALSE;
+
+
+
+
+/* CREATE DATABASE AND SCHEMA*/
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+/* Use acccountadmin role and WH */
+
+USE ROLE ACCOUNTADMIN;
+
+USE WAREHOUSE COMPUTE_WH;
+
+
+-- Copy CommandALL
+COPY INTO customers_named
+FROM @internal_named_stage
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1)  PURGE = TRUE;
+
+
+
+-- File Format definiation
+
+CREATE OR REPLACE FILE FORMAT my_csv_ff
+  TYPE = CSV
+  FIELD_DELIMITER = ','
+  SKIP_HEADER = 1
+  NULL_IF = ('NULL', 'null')
+  EMPTY_FIELD_AS_NULL = true
+  COMPRESSION = NONE;
+
+  --Use file format
+  
+COPY INTO customers_named
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff  FORCE = TRUE;
+
+select * from customers_named limit 10;
+
+-- FF for JSON
+
+CREATE OR REPLACE FILE FORMAT my_json_ff
+  TYPE = JSON;
+
+-- FF for PARQUET
+
+CREATE OR REPLACE FILE FORMAT my_parquet_ff
+  TYPE = PARQUET
+  COMPRESSION = SNAPPY;
+
+
+
+-- Alter FF
+
+ALTER FILE FORMAT IF EXISTS my_csv_ff RENAME TO my_csv_ff_new;
+
+ALTER FILE FORMAT my_csv_ff_new SET FIELD_DELIMITER='|';
+
+--Describe FF
+
+DESC FILE FORMAT my_csv_ff_new;
+
+
+--  Show FF
+
+SHOW FILE FORMATS;
+
+--Drop FF
+
+DROP FILE FORMAT my_csv_ff_new;
+
+
+
+
+--Overriding Default File Format Options
+
+
+
+
+
+COPY INTO mytable
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff;
+
+CREATE STAGE my_int_stage
+  FILE_FORMAT = my_csv_ff;
+  
+
+  CREATE TABLE mytable
+  USING TEMPLATE (
+    SELECT ARRAY_AGG(OBJECT_CONSTRUCT(*))
+    WITHIN GROUP (ORDER BY ORDER_ID)
+      FROM TABLE(
+        INFER_SCHEMA(
+          LOCATION=>'@mystage',
+          FILE_FORMAT=>'my_csv_ff'
+        )
+      ));
+
+      
+
+1.COPY INTO TABLE statement.
+
+2.Stage definition.
+
+3.Table definition.
+
+--------------------STream---------------------------------
+
+/* CREATE DATABASE AND SCHEMA*/
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+/* Use acccountadmin role and WH */
+
+USE ROLE ACCOUNTADMIN;
+
+USE WAREHOUSE COMPUTE_WH;
+
+-- Create Source table
+CREATE or REPLACE TABLE raw_data (
+  id INT,
+  name VARCHAR(50),
+  age INT
+);
+
+
+
+-- Create Target table
+
+CREATE OR REPLACE TABLE processed_data (
+  id INT,
+  name VARCHAR(50),
+  age VARCHAR(10)
+);
+
+
+SHOW TABLES LIKE '%raw%';
+
+-- Insert data in source
+
+INSERT INTO raw_data (id, name, age)
+VALUES (1, 'John', 25),
+       (2, 'Mary', 30),
+       (3, 'Peter', 40),
+       (4, 'Jane', 35);
+
+       
+
+-- Display source data
+
+SELECT * FROM raw_data;
+
+-- One time load to target table
+
+INSERT INTO processed_data SELECT * FROM raw_data;
+
+-- Display tagret table
+
+SELECT * FROM processed_data;
+
+-- Create Stream on source table
+
+CREATE OR REPLACE STREAM raw_data_stream ON TABLE raw_data;
+
+-- Show all streams 
+
+SHOW STREAMS;
+
+-- Show specific streams
+
+DESC STREAM RAW_DATA_STREAM;
+
+-- Display stream data
+
+SELECT * FROM raw_data_stream;
+
+-- Check databse parameters
+
+SHOW PARAMETERS IN DATABASE;
+
+
+
+-- Inserting new record in soucre tablle
+
+INSERT INTO raw_data (id, name, age)
+VALUES (5, 'Mike', 45);
+
+-- Display stream data
+
+SELECT * FROM raw_data_stream;
+
+-- First example for insert stream
+
+INSERT INTO processed_data(id,name,age) SELECT id, name, age FROM raw_data_stream;
+
+-- After consuming stream
+
+SELECT * FROM raw_data_stream;
+
+-- Display tagret table
+
+SELECT * FROM processed_data;
+
+
+
+
+
+
+-- Update source table record
+UPDATE raw_data SET age = 27 WHERE id = 1;
+
+
+
+-- Delete a record
+DELETE FROM raw_data WHERE id = 4;
+
+-- Insert a new record
+INSERT INTO raw_data (id, name, age)
+VALUES (6, 'Mike', 65);
+
+
+-- Merge to load data from stream to target 
+
+ MERGE INTO processed_data p USING raw_data_stream s ON p.ID = s.ID
+  WHEN MATCHED AND metadata$action = 'DELETE' AND metadata$isupdate = 'FALSE' -- Deletion
+    THEN DELETE    
+  WHEN MATCHED AND metadata$action = 'INSERT' AND metadata$isupdate = 'TRUE'  --Update
+    THEN UPDATE SET p.NAME = s.NAME, p.AGE = s.AGE      
+  WHEN NOT MATCHED AND metadata$action = 'INSERT' AND metadata$isupdate = 'FALSE' -- Insert
+    THEN INSERT (ID, NAME, AGE) VALUES (s.ID, s.NAME, s.AGE);
+
+
+
+SELECT * FROM processed_data;
+
+
+
+
+
+-- After consuming stream
+
+SELECT * FROM raw_data_stream;
+
+
+-- Show specific streams
+
+DESC STREAM RAW_DATA_STREAM;
+
+
+
+--Append only Stream
+CREATE OR REPLACE STREAM raw_data_stream2 ON TABLE raw_data append_only=true; -- For external table insert_only = true
+
+SELECT * FROM raw_data_stream2;
+
+
+-- Update source table record
+UPDATE raw_data SET age = 28 WHERE id = 1;
+
+
+
+-- Delete a record
+DELETE FROM raw_data WHERE id = 1;
+
+-- Insert a new record
+INSERT INTO raw_data (id, name, age)
+VALUES (6, 'Mike', 45);
+
+
+
+
+-------------------TASK-----------------------------------
+
+/* CREATE DATABASE AND SCHEMA*/
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+/* Use acccountadmin role and WH */
+
+USE ROLE ACCOUNTADMIN;
+
+USE WAREHOUSE COMPUTE_WH;
+
+-- Create TASK with User Managed Warehouse
+
+CREATE OR REPLACE TASK TASK_DEMO_U
+  WAREHOUSE = COMPUTE_WH
+  SCHEDULE = '1 MINUTE'
+AS
+INSERT INTO my_table (id, name, email) VALUES
+  (100, 'User Managed', 'john@example.com');
+
+-- Create TASK for Serverless
+
+CREATE OR REPLACE TASK TASK_DEMO_S
+  USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE = 'XSMALL'   --By Default Medium
+  SCHEDULE = '1 MINUTE'
+AS
+INSERT INTO my_table (id, name, email) VALUES
+  (100, 'Serverless', 'john@example.com');
+  
+-- Check the default values
+
+SHOW PARAMETERS IN DATABASE;
+  
+-- Show all Tasks
+
+SHOW TASKS;
+
+-- Need to Resume the tasks
+
+ALTER TASK TASK_DEMO_U RESUME;
+ALTER TASK TASK_DEMO_S RESUME;
+
+--Check history of all tasks
+
+SELECT * FROM TABLE(INFORMATION_SCHEMA.TASK_HISTORY());
+
+-- Check data update
+
+SELECT * FROM MY_TABLE;
+
+-- You can alter the initial warehouse
+
+ALTER TASK TASK_DEMO_S SET USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE = 'SMALL';
+
+-- Suspend the Tasks
+
+ALTER TASK TASK_DEMO_S SUSPEND;
+ALTER TASK TASK_DEMO_U SUSPEND;
+
+DESC TASK TASK_DEMO_S;
+
+
+EXECUTE TASK TASK_DEMO_S;
+
+
+DROP TASK IF EXISTS TASK_DEMO_S;
+
+-- Depndednt Tasks
+
+CREATE OR REPLACE TASK TASK_DEMO_2
+  USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE = 'XSMALL'
+  --SCHEDULE = '1 MINUTE'
+  AFTER TASK_DEMO_U
+AS
+INSERT INTO my_table (id, name, email) VALUES
+  (100, 'Dependent', 'john@example.com');
+
+ALTER TASK TASK_DEMO_2 RESUME;
+
+SHOW TASKS;
+
+
+-- Combining Stream and Tasks
+
+-- Inserting new record in source tablle
+
+INSERT INTO raw_data (id, name, age)
+VALUES (10, 'Learn', 45);
+
+SELECT * FROM raw_data_stream;
+
+CREATE OR REPLACE TASK TASK_STREAM
+  USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE = 'XSMALL'
+  SCHEDULE = '1 MINUTE'
+WHEN  SYSTEM$STREAM_HAS_DATA('raw_data_stream')
+AS INSERT INTO processed_data(id,name,age) SELECT id, name, age FROM raw_data_stream;
+
+ALTER TASK TASK_STREAM RESUME;
+
+--Check history of all tasks
+
+SELECT * FROM TABLE(INFORMATION_SCHEMA.TASK_HISTORY());
+
+SHOW TASKS;
+
+SELECT *  FROM processed_data;
+
+
+ALTER TASK TASK_DEMO_2 SUSPEND;
+
+--Drop All Tasks
+
+DROP TASK TASK_DEMO_2;
+DROP TASK TASK_STREAM;
+DROP TASK TASK_DEMO_U;
+
+  
+
+---------------Validation--------------------------
+
+/* Validation Mode, to test the data before loading
+
+VALIDATION_MODE = RETURN_n_ROWS | RETURN_ERRORS | RETURN_ALL_ERRORS
+
+VALIDATE : Validates the files loaded in a past execution of the COPY INTO <table> command 
+
+*/
+
+/* CREATE DATABASE AND SCHEMA*/
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+/* Use acccountadmin role and WH */
+
+USE ROLE ACCOUNTADMIN;
+
+USE WAREHOUSE COMPUTE_WH;
+
+RM @internal_named_stage;
+
+LS @internal_named_stage;
+
+-- CSV File Format
+
+CREATE OR REPLACE FILE FORMAT my_csv_ff
+  TYPE = CSV
+  FIELD_DELIMITER = ','
+  SKIP_HEADER = 1
+  NULL_IF = ('NULL', 'null')
+  EMPTY_FIELD_AS_NULL = true
+  COMPRESSION = NONE;
+
+  -- Create a sample table
+  
+CREATE OR REPLACE TABLE LA_DB.LA_SCHEMA.CUSTOMERS_NAMED3 (
+	CUSTOMER NUMBER(38,0) NOT NULL,
+	FIRST_NAME VARCHAR(255) NOT NULL,
+	LAST_NAME VARCHAR(255) NOT NULL,
+	REGION VARCHAR(255) NOT NULL,
+	EMAIL VARCHAR(255) NOT NULL,
+	GENDER VARCHAR(255) NOT NULL,
+	"order" NUMBER(38,0) NOT NULL
+);
+
+-- Return all error by simulation
+
+COPY INTO customers_named3
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff
+VALIDATION_MODE = 'RETURN_ERRORS';
+
+-- Just check first N rows for error
+
+COPY INTO customers_named3
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff
+VALIDATION_MODE = 'RETURN_10_ROWS';
+
+-- Return all error by simulation, also include previous partialy loaded file
+
+COPY INTO customers_named3
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff
+VALIDATION_MODE = 'RETURN_ALL_ERRORS';
+
+-- Truncate table
+
+TRUNCATE customers_named;
+
+
+-- Using RETURN_FAILED_ONLY
+
+COPY INTO customers_named
+FROM @internal_named_stage
+FILE_FORMAT = my_csv_ff
+ON_ERROR = CONTINUE
+RETURN_FAILED_ONLY  = TRUE;
+
+-- VALIDATE Option to check error in last COPY COmmand
+
+SELECT * FROM TABLE(VALIDATE(customers_named, JOB_ID => '_last')); --01ade083-3200-d1bb-0005-3db60002918a
+
+-- Save error in separate table
+
+CREATE OR REPLACE TABLE copy_errors AS SELECT * FROM TABLE(VALIDATE(customers_named, JOB_ID => '01ade083-3200-d1bb-0005-3db60002918a'));
+
+SELECT *  FROM copy_errors;
+
+
+
+----------------------------------------------------------
+
+/* CREATE DATABASE AND SCHEMA*/
+USE DATABASE LA_DB;
+USE SCHEMA LA_SCHEMA;
+
+/* Use acccountadmin role and WH */
+
+USE ROLE ACCOUNTADMIN;
+
+USE WAREHOUSE COMPUTE_WH;
+
+
+
+CREATE or REPLACE TABLE sample_data (
+  id INT,
+  name VARCHAR(50),
+  age INT
+);
+
+
+INSERT INTO sample_data (id, name, age)
+VALUES (1, 'John', 25),
+       (2, 'Mary', 30),
+       (3, 'Peter', 40),
+       (4, 'Jane', 35);
+
+
+-- Create a clone
+
+CREATE OR REPLACE TABLE clone_data CLONE sample_data;
+
+-- Create clone from clone
+
+CREATE OR REPLACE TABLE clone_data2 CLONE clone_data;
+
+SELECT * FROM clone_data2;
+SELECT * FROM sample_data;
+
+-- Update the original table
+
+INSERT INTO sample_data (id, name, age)
+VALUES (5, 'John', 25);
+
+SELECT * FROM clone_data;
+
+-- Time Travel-----
+
+-- Create the CUSTOMER table
+ALTER SESSION SET TIMEZONE = 'UTC';
+
+-- This command retrieves the current timestamp in the UTC timezone
+SELECT SYSTIMESTAMP();
+
+--2023-07-29 05:30:44.611 +0000
+
+TRUNCATE TABLE sample_data;
+
+CREATE OR REPLACE TABLE orders_clone_restore CLONE sample_data BEFORE (TIMESTAMP => '2023-07-29 05:30:44.611 +0000'::timestamp);
+
+CREATE OR REPLACE TABLE orders_clone_restore CLONE sample_data BEFORE (STATEMENT => '01adebc5-3200-d22f-0005-3db60003005e');
+
+
+
+SELECT * FROM orders_clone_restore; 
+
+
+-- This command selects all rows from the CUSTOMER table as it existed 3 hours ago
+CREATE OR REPLACE TABLE orders_clone_restore CLONE sample_data  AT(OFFSET => -60*3);
+
+
+
+
+
+
+
+
+
+/* Similary we can CLONE DB, SCEHMA but if any of the child has time travel beyond the retention period
+  Or If Time travel is set before the child was created */
+
+
+  -- Create a sample view
+  
+CREATE OR REPLACE VIEW myview AS SELECT * FROM CUSTOMER;
+
+SELECT * FROM LA_DB.LA_SCHEMA.myview;
+
+-- Clone the Schema
+
+CREATE OR REPLACE SCHEMA LA_SCHEMA2 CLONE LA_SCHEMA;
+
+-- Check DDL
+
+SELECT GET_DDL ('schema', 'LA_SCHEMA2', true);
+
+
+-- DROP original table
+DROP TABLE LA_DB.LA_SCHEMA.CUSTOMER;
+
+-- Check the impact on new view
+
+SELECT * FROM LA_DB.LA_SCHEMA2.myview;
+
+UNDROP TABLE LA_DB.LA_SCHEMA.CUSTOMER;
+
+SELECT * FROM LA_DB.LA_SCHEMA2.CUSTOMER;
+
+
+
+
+
+
+
+-- Testing for CLONING of stream
+
+
+
+-- Create Source table
+CREATE or REPLACE TABLE raw_data (
+  id INT,
+  name VARCHAR(50),
+  age INT
+);
+
+-- Create new Stream
+
+CREATE OR REPLACE STREAM raw_data_stream ON TABLE raw_data;
+
+SHOW STREAMS;
+
+-- Inserting new record in soucre tablle
+
+INSERT INTO raw_data (id, name, age)
+VALUES (5, 'Mike', 45);
+
+-- Check Stream data
+
+SELECT * FROM raw_data_stream;
+
+-- Create Copy Stream
+
+CREATE OR REPLACE STREAM LA_DB.LA_SCHEMA.raw_data_stream2 CLONE raw_data_stream;
+
+SELECT * FROM LA_DB.LA_SCHEMA.raw_data_stream;
+SELECT * FROM LA_DB.LA_SCHEMA.raw_data_stream2;
+
+DESC stream raw_data_stream2;
+
+
+-- Clone the Schema
+
+DROP SCHEMA LA_SCHEMA2;
+
+CREATE OR REPLACE SCHEMA LA_SCHEMA2 CLONE LA_SCHEMA;
+
+
+DESC stream LA_DB.LA_SCHEMA2.RAW_DATA_STREAM;
+
+SELECT * FROM LA_DB.LA_SCHEMA2.RAW_DATA_STREAM;
+------------------------------------------------------------------------------------------
+
+
+
+--Reference https://docs.snowflake.com/en/user-guide/data-load-transform
+
+
+list @internal_named_stage;
+
+select t.$1,t.$2,t.$4 from @internal_named_stage t;
+
+select t.$1, CONCAT(t.$2 ,' ', t.$3 ),t.$4, t.$7 from @internal_named_stage t;
+
+
+
+
+-- Create new table
+CREATE or replace TABLE new_table2 (
+  customer VARCHAR,
+  full_name VARCHAR,
+  region VARCHAR,
+  email VARCHAR,
+  gender VARCHAR,
+  "ORDER" INTEGER
+);
+
+
+
+---load only for selected column and reorder
+
+COPY INTO new_table2 (customer,full_name,region,gender,email)
+FROM  (select t.$1, CONCAT(t.$2 ,' ', t.$3 ),t.$4, t.$6, t.$5 from @internal_named_stage/data_0_0_0.csv t)
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1 )
+FORCE = TRUE;  
+
+truncate new_table2;
+
+select * from new_table2;
+
+
+
+
+-- Create new table
+CREATE or replace TABLE new_table2 (
+  customer VARCHAR,
+  full_name VARCHAR,
+  region VARCHAR,
+  email VARCHAR,
+  gender VARCHAR,
+  "ORDER" DECIMAL (15,3),
+  extra_col BINARY
+);
+
+---load only for column casting to Decimal
+
+COPY INTO new_table2 (customer, full_name, region,email,gender,"ORDER", extra_col)
+FROM  (
+select t.$1, CONCAT(t.$2 ,' ', t.$3 ),  t.$4,t.$5, t.$6, cast( t.$7 AS INTEGER),to_binary(t.$8,'utf-8') from @internal_named_stage t
+)
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1 )
+FORCE = TRUE;  
+
+
+select t.$1, CONCAT(t.$2 ,' ', t.$3 ),  t.$4,t.$5, t.$6, t.$7,t.$4from @internal_named_stage t
+
+select * from new_table2;
+
+truncate new_table2;
+
+
+
+---load only for auto increment
+
+-- Create new table
+CREATE or replace TABLE new_table2 (
+
+  index number autoincrement start 2 increment 10,
+  customer VARCHAR,
+  full_name VARCHAR,
+  region VARCHAR,
+  email VARCHAR,
+  gender VARCHAR,
+  "ORDER" DECIMAL (15,3),
+  extra_col BINARY
+);
+
+COPY INTO new_table2 (customer, full_name, region,email,gender,"ORDER", extra_col)
+FROM  (select t.$1, CONCAT(t.$2 ,' ', t.$3 ),  t.$4,t.$5, t.$6, cast( t.$7 AS INTEGER),to_binary(t.$4,'utf-8') from @internal_named_stage/data_0_0_0.csv t)
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1 );
+FORCE = TRUE;  
+
+select * from new_table2;
+
+truncate new_table2;
+
+
+CREATE or replace TABLE new_table2 (
+
+  index number autoincrement start 1 increment 1,
+  customer VARCHAR,
+  full_name VARCHAR (8),
+  region VARCHAR,
+  email VARCHAR,
+  gender VARCHAR,
+  "ORDER" DECIMAL (15,3),
+  extra_col BINARY
+);
+
+
+--Truncating text strings that exceed the target column length
+
+COPY INTO new_table2 (customer, full_name, region,email,gender,"ORDER", extra_col)
+FROM  (select t.$1, CONCAT(t.$2 ,' ', t.$3 ),  t.$4,t.$5, t.$6, cast( t.$7 AS INTEGER),to_binary(t.$4,'utf-8') from @internal_named_stage/data_0_0_0.csv t)
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1 )
+TRUNCATECOLUMNS = TRUE;
+FORCE = TRUE;  
+
+select * from new_table2;
+
+truncate new_table2;
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
